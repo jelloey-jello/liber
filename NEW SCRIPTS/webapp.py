@@ -13,13 +13,24 @@ This Streamlit app performs the following:
 
 In case you get import warnings: pip install streamlit requests bs4 pandas matplotlib rdkit py3Dmol json
 
-To run: run 'streamlit run "NEW SCRIPTS/webapp.py"' in the terminal
+To run: 'streamlit run "NEW SCRIPTS/webapp.py"' in the terminal
 
 To stop once code runs: CTRL + C
 
 fun note: running "pwd" in the terminal will show you the current working directory
 
 Path: "cd /Users/josiahe.thompson/Library/Mobile\ Documents/com~apple~CloudDocs/G2RETRO"
+
+To push changes from VS Code: git push -u origin main --force
+
+Ensuring code is pushed to GitHub:
+
+git init
+git remote add origin https://github.com/jelloey-jello/https://github.com/jelloey-jello/liber.git
+git branch -M main
+git add .
+git commit -m "Initial commit"
+git push -u origin main
 """
 
 import streamlit as st
