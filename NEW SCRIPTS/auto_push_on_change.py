@@ -1,70 +1,25 @@
 import os
-import subprocess
 import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
-# Function to run a shell command
-def run_command(command):
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Error running command: {command}")
-        print(result.stderr)
-    else:
-        print(result.stdout)
+FOLDER_TO_WATCH = '.'  # or the path to your project
+POLL_INTERVAL = 5  # seconds
 
-# Function to commit and push changes to GitHub
-def commit_and_push():
-    commit_message = "Auto-commit: changes detected"
-    print(f"Committing changes with message: {commit_message}")
-    run_command("git add .")
-    run_command(f'git commit -m "{commit_message}"')
-    run_command("git push")
-    print("Changes successfully pushed to GitHub!")
+def has_changes():
+    return os.system('git diff --quiet') != 0
 
-# Define the event handler for file changes
-class GitChangeHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        # Trigger commit and push on any file modification
-        if event.is_directory:
-            return  # Ignore directories
-        print(f"File modified: {event.src_path}")
-        commit_and_push()
+def push_changes():
+    os.system('git add .')
+    os.system('git commit -m "Auto update from local changes"')
+    os.system('git push')
 
-    def on_created(self, event):
-        # Trigger commit and push when a new file is created
-        if event.is_directory:
-            return  # Ignore directories
-        print(f"File created: {event.src_path}")
-        commit_and_push()
-
-    def on_deleted(self, event):
-        # Trigger commit and push when a file is deleted
-        if event.is_directory:
-            return  # Ignore directories
-        print(f"File deleted: {event.src_path}")
-        commit_and_push()
-
-# Step 1: Set up the project directory (ensure we are in the correct folder)
-repo_directory = os.path.dirname(os.path.realpath(__file__))
-os.chdir(repo_directory)
-
-# Step 2: Set up the watchdog observer
-observer = Observer()
-event_handler = GitChangeHandler()
-observer.schedule(event_handler, path=repo_directory, recursive=True)
-
-# Start watching the directory
-print("Watching for changes in the project directory...")
-observer.start()
-
+print("Watching for changes... Press Ctrl+C to stop.")
 try:
     while True:
-        time.sleep(1)  # Keep the script running and monitoring for changes
+        if has_changes():
+            push_changes()
+        time.sleep(POLL_INTERVAL)
 except KeyboardInterrupt:
-    observer.stop()
-
-observer.join()
+    print("Stopped watching.")
 
 """
 

@@ -1,4 +1,4 @@
-# 🧪 Aromatic Compound Explorer Web App
+# 🧪 Chemical Reaction Web App
 
 This is a **Streamlit-based web app** that allows users to explore aromatic compounds scraped from Wikipedia. The app fetches molecular data from **PubChem**, displays **2D and 3D structures**, and offers basic visualization and similarity search features. It’s a great starting point for chemical informatics and SMILES-based applications.
 
@@ -81,3 +81,57 @@ streamlit run app.py
 - Make sure you have **Python 3.8–3.12** installed.
 - You’ll need a **stable internet connection** to fetch data from Wikipedia and PubChem.
 - Some compound names may not have SMILES strings; these are skipped automatically.
+
+## 🧩 GitHub Setup & Auto Push (Optional)
+To automatically push your changes to GitHub every time your code updates:
+
+1. Clone your GitHub repo locally
+
+If you haven’t already:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd YOUR_REPO
+```
+
+2. Set the upstream and default branch
+
+```bash
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git pull origin main  # optional, if the remote already has code
+```
+
+3. Add the auto-push script
+
+```python
+import os
+import time
+
+FOLDER_TO_WATCH = '.'  # or the path to your project
+POLL_INTERVAL = 5  # seconds
+
+def has_changes():
+    return os.system('git diff --quiet') != 0
+
+def push_changes():
+    os.system('git add .')
+    os.system('git commit -m "Auto update from local changes"')
+    os.system('git push')
+
+print("Watching for changes... Press Ctrl+C to stop.")
+try:
+    while True:
+        if has_changes():
+            push_changes()
+        time.sleep(POLL_INTERVAL)
+except KeyboardInterrupt:
+    print("Stopped watching.")
+```
+
+Then run the script in the background:
+```bash
+python auto_push_on_change.py
+```
+
+✅ Now any change you make and save will automatically push to your GitHub repo!
