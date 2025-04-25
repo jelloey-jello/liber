@@ -17,6 +17,9 @@ To run: run 'streamlit run "NEW SCRIPTS/webapp.py"' in the terminal
 
 To stop once code runs: CTRL + C
 
+fun note: running "pwd" in the terminal will show you the current working directory
+
+Path: "cd /Users/josiahe.thompson/Library/Mobile\ Documents/com~apple~CloudDocs/G2RETRO"
 """
 
 import streamlit as st
