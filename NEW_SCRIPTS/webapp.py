@@ -54,48 +54,44 @@ from rdkit import Chem
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
 from rdkit.Chem import Draw, Descriptors
-import aiohttp   # NEW: Async HTTP requests
-import asyncio   # NEW: Async control
 
 # -------------------------------
-# Step 1: Scrape compound names (Async!)
+# Step 1: Scrape compound names (using requests)
 # -------------------------------
-async def get_aromatic_compound_names():
+def get_aromatic_compound_names():
     url = "https://en.wikipedia.org/wiki/Category:Aromatic_compounds"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            text = await response.text()
-            soup = BeautifulSoup(text, "html.parser")
-            items = soup.select('div#mw-pages li a')
-            compound_names = [item.get_text() for item in items]
-            return compound_names
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    items = soup.select('div#mw-pages li a')
+    compound_names = [item.get_text() for item in items]
+    return compound_names
 
 # ----------------------------------------------------------
-# Step 2: Get SMILES from PubChem and calculate properties (Async!)
+# Step 2: Get SMILES from PubChem and calculate properties (using requests instead of aiohttp)
 # ----------------------------------------------------------
-async def fetch_pubchem_data(session, name):
+def fetch_pubchem_data(name):
     base_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/property/CanonicalSMILES/JSON"
     try:
-        async with session.get(base_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-            if response.status == 200:
-                data = await response.json()
-                props = data['PropertyTable']['Properties'][0]
-                smiles = props.get("CanonicalSMILES")
-                mol = Chem.MolFromSmiles(smiles)
-                if mol:
-                    return {
-                        "Name": name,
-                        "SMILES": smiles,
-                        "MolecularWeight": Descriptors.MolWt(mol),
-                        "LogP": Descriptors.MolLogP(mol),
-                        "TPSA": Descriptors.TPSA(mol)
-                    }
+        response = requests.get(base_url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            props = data['PropertyTable']['Properties'][0]
+            smiles = props.get("CanonicalSMILES")
+            mol = Chem.MolFromSmiles(smiles)
+            if mol:
+                return {
+                    "Name": name,
+                    "SMILES": smiles,
+                    "MolecularWeight": Descriptors.MolWt(mol),
+                    "LogP": Descriptors.MolLogP(mol),
+                    "TPSA": Descriptors.TPSA(mol)
+                }
     except Exception as e:
         return None
     return None
 
 # ----------------------------
-# Step 3: Get Similar Compounds (Still Sync for simplicity)
+# Step 3: Get Similar Compounds (using requests)
 # ----------------------------
 def get_similar_compounds(smiles):
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/similarity/smiles/{smiles}/JSON?Threshold=90&MaxRecords=5"
@@ -147,17 +143,15 @@ def simulate_interaction(smiles_list):
 # ----------------------
 st.title("🧪 Aromatic Compound Explorer")
 
-async def main():
+def main():
     with st.spinner("Scraping and fetching compound data..."):
-        names = await get_aromatic_compound_names()
+        names = get_aromatic_compound_names()
         
         data = []
-        async with aiohttp.ClientSession() as session:
-            tasks = [fetch_pubchem_data(session, name) for name in names]
-            results = await asyncio.gather(*tasks)
-
-            # Filter valid results
-            data = [d for d in results if d and d['SMILES']]
+        for name in names:
+            compound_data = fetch_pubchem_data(name)
+            if compound_data and compound_data.get('SMILES'):
+                data.append(compound_data)
 
         df = pd.DataFrame(data)
 
@@ -221,5 +215,5 @@ async def main():
         result = simulate_interaction(selected_smiles)
         st.info(result)
 
-# Run the main async function
-asyncio.run(main())
+# Run the main function
+main()
