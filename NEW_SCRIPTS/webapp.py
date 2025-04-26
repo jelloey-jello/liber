@@ -1,3 +1,5 @@
+# pushed after fixing environment.yml
+
 """
 Aromatic Compound Explorer Web App
 
@@ -11,20 +13,21 @@ This Streamlit app performs the following:
 7. Simulates chemical interactions via a mock T5Chem/ChemCrow-style checker.
 8. Allows data export to CSV and JSON.
 
-In case you get import warnings: pip install streamlit requests bs4 pandas matplotlib rdkit py3Dmol json
+In case you get import warnings:
+pip install streamlit requests beautifulsoup4 pandas matplotlib rdkit pip aiohttp asyncio py3Dmol json
 
 To run: 'streamlit run "NEW SCRIPTS/webapp.py"' in the terminal
 
 To stop once code runs: CTRL + C
 
-fun note: running "pwd" in the terminal will show you the current working directory
+fun fact: running "pwd" in the terminal will show you the current working directory
 
 Path: "cd /Users/josiahe.thompson/Library/Mobile\ Documents/com~apple~CloudDocs/G2RETRO"
 
 To push changes from VS Code:
 
 git add .
-git commit -m "Commit before rebase"
+git commit -m "Commit before rebase (updated webapp.py and environment.yml)"
 git push -u origin main (add '--force' as neccessary)
 (sometimes running 'git rebase --continue' helps)
 
@@ -38,59 +41,67 @@ git commit -m "Initial commit"
 git push -u origin main
 """
 
-import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-import matplotlib.pyplot as plt
-from rdkit import Chem
-from rdkit.Chem import Draw, Descriptors
-import py3Dmol
-import time
+# -------------------------------
+# Import necessary libraries
+# -------------------------------
 import json
+import time
+import py3Dmol
+import requests
+import pandas as pd
+import streamlit as st
+from rdkit import Chem
+from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
+from rdkit.Chem import Draw, Descriptors
+import aiohttp   # NEW: Async HTTP requests
+import asyncio   # NEW: Async control
 
 # -------------------------------
-# Step 1: Scrape compound names
+# Step 1: Scrape compound names (Async!)
 # -------------------------------
-def get_aromatic_compound_names():
+async def get_aromatic_compound_names():
     url = "https://en.wikipedia.org/wiki/Category:Aromatic_compounds"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    items = soup.select('div#mw-pages li a')
-    compound_names = [item.get_text() for item in items]
-    return compound_names
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            text = await response.text()
+            soup = BeautifulSoup(text, "html.parser")
+            items = soup.select('div#mw-pages li a')
+            compound_names = [item.get_text() for item in items]
+            return compound_names
 
 # ----------------------------------------------------------
-# Step 2: Get SMILES from PubChem and calculate properties
+# Step 2: Get SMILES from PubChem and calculate properties (Async!)
 # ----------------------------------------------------------
-def get_pubchem_data(name):
+async def fetch_pubchem_data(session, name):
     base_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/property/CanonicalSMILES/JSON"
-    response = requests.get(base_url)
-    if response.status_code == 200:
-        try:
-            data = response.json()['PropertyTable']['Properties'][0]
-            smiles = data.get("CanonicalSMILES")
-            mol = Chem.MolFromSmiles(smiles)
-            if mol:
-                return {
-                    "Name": name,
-                    "SMILES": smiles,
-                    "MolecularWeight": Descriptors.MolWt(mol),
-                    "LogP": Descriptors.MolLogP(mol),
-                    "TPSA": Descriptors.TPSA(mol)
-                }
-        except (KeyError, IndexError):
-            return None
+    try:
+        async with session.get(base_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            if response.status == 200:
+                data = await response.json()
+                props = data['PropertyTable']['Properties'][0]
+                smiles = props.get("CanonicalSMILES")
+                mol = Chem.MolFromSmiles(smiles)
+                if mol:
+                    return {
+                        "Name": name,
+                        "SMILES": smiles,
+                        "MolecularWeight": Descriptors.MolWt(mol),
+                        "LogP": Descriptors.MolLogP(mol),
+                        "TPSA": Descriptors.TPSA(mol)
+                    }
+    except Exception as e:
+        return None
     return None
 
 # ----------------------------
-# Step 3: Get Similar Compounds
+# Step 3: Get Similar Compounds (Still Sync for simplicity)
 # ----------------------------
 def get_similar_compounds(smiles):
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/similarity/smiles/{smiles}/JSON?Threshold=90&MaxRecords=5"
-    response = requests.get(url)
-    if response.status_code == 200:
-        try:
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
             cids = response.json()['IdentifierList']['CID']
             names = []
             for cid in cids:
@@ -100,14 +111,12 @@ def get_similar_compounds(smiles):
                     name = name_response.json()['PropertyTable']['Properties'][0]['IUPACName']
                     names.append(name)
             return names
-        except:
-            return []
+    except:
+        return []
     return []
 
-"""
-
 # ----------------------------
-# Step 4: Visualization helpers
+# Step 4: Visualization helpers (same as before)
 # ----------------------------
 def display_structure_image(smiles):
     mol = Chem.MolFromSmiles(smiles)
@@ -125,10 +134,9 @@ def display_3d_structure(smiles):
         st.components.v1.html(viewer._make_html(), height=300)
 
 # --------------------------------
-# Step 5: Simulate Chemical Interaction
+# Step 5: Simulate Chemical Interaction (same as before)
 # --------------------------------
 def simulate_interaction(smiles_list):
-    # Simulated knowledge base
     if len(smiles_list) < 2:
         return "Please select at least 2 compounds."
     simulated_output = "Mixing these compounds may result in a high-energy aromatic reaction. Check thermochemistry and toxicity!"
@@ -139,62 +147,79 @@ def simulate_interaction(smiles_list):
 # ----------------------
 st.title("🧪 Aromatic Compound Explorer")
 
-with st.spinner("Scraping and fetching compound data (may take ~1 min)..."):
-    names = get_aromatic_compound_names()
-    data = []
-    for name in names:
-        d = get_pubchem_data(name)
-        if d and d['SMILES']:  # only include valid entries
-            data.append(d)
-        time.sleep(0.3)  # respectful delay
-    df = pd.DataFrame(data)
+async def main():
+    with st.spinner("Scraping and fetching compound data..."):
+        names = await get_aromatic_compound_names()
+        
+        data = []
+        async with aiohttp.ClientSession() as session:
+            tasks = [fetch_pubchem_data(session, name) for name in names]
+            results = await asyncio.gather(*tasks)
 
-st.success(f"Loaded {len(df)} compounds!")
+            # Filter valid results
+            data = [d for d in results if d and d['SMILES']]
 
-# Display compound table
-st.dataframe(df)
+        df = pd.DataFrame(data)
 
-# Export section
-st.subheader("💾 Download Data")
-st.download_button("Download as CSV", df.to_csv(index=False), "compounds.csv")
-st.download_button("Download as JSON", json.dumps(df.to_dict(orient="records")), "compounds.json")
+    st.success(f"Loaded {len(df)} compounds!")
 
-# Histogram visualization
-st.subheader("📊 Compound Molecular Weight Distribution")
-fig, ax = plt.subplots()
-df['MolecularWeight'].dropna().plot(kind='hist', bins=20, ax=ax)
-ax.set_xlabel("Molecular Weight")
-st.pyplot(fig)
+    # --------------------
+    # Display compound table
+    # --------------------
+    st.dataframe(df)
 
-# Select a compound
-st.subheader("🔍 Explore a Compound")
-selected = st.selectbox("Select a compound:", df['Name'])
-compound = df[df['Name'] == selected].iloc[0]
+    # --------------------
+    # Export section
+    # --------------------
+    st.subheader("💾 Download Data")
+    st.download_button("Download as CSV", df.to_csv(index=False), "compounds.csv")
+    st.download_button("Download as JSON", json.dumps(df.to_dict(orient="records")), "compounds.json")
 
-st.write(f"**Name:** {compound['Name']}")
-st.write(f"**SMILES:** {compound['SMILES']}")
-st.write(f"**Molecular Weight:** {compound['MolecularWeight']:.2f}")
-st.write(f"**LogP:** {compound['LogP']:.2f}")
-st.write(f"**TPSA:** {compound['TPSA']:.2f}")
+    # --------------------
+    # Histogram visualization
+    # --------------------
+    st.subheader("📊 Compound Molecular Weight Distribution")
+    fig, ax = plt.subplots()
+    df['MolecularWeight'].dropna().plot(kind='hist', bins=20, ax=ax)
+    ax.set_xlabel("Molecular Weight")
+    st.pyplot(fig)
 
-display_structure_image(compound['SMILES'])
-display_3d_structure(compound['SMILES'])
+    # --------------------
+    # Select a compound
+    # --------------------
+    st.subheader("🔍 Explore a Compound")
+    selected = st.selectbox("Select a compound:", df['Name'])
+    compound = df[df['Name'] == selected].iloc[0]
 
-# Similar compounds
-st.subheader("🔗 Similar Compounds (90%+ similarity)")
-similar = get_similar_compounds(compound['SMILES'])
-if similar:
-    for s in similar:
-        st.write("-", s)
-else:
-    st.write("No similar compounds found.")
+    st.write(f"**Name:** {compound['Name']}")
+    st.write(f"**SMILES:** {compound['SMILES']}")
+    st.write(f"**Molecular Weight:** {compound['MolecularWeight']:.2f}")
+    st.write(f"**LogP:** {compound['LogP']:.2f}")
+    st.write(f"**TPSA:** {compound['TPSA']:.2f}")
 
-# Interaction checker
-st.subheader("🧠 Simulate Chemical Interaction")
-selected_names = st.multiselect("Choose compounds to mix:", df['Name'])
-selected_smiles = df[df['Name'].isin(selected_names)]['SMILES'].tolist()
-if st.button("Check Interaction"):
-    result = simulate_interaction(selected_smiles)
-    st.info(result)
+    display_structure_image(compound['SMILES'])
+    display_3d_structure(compound['SMILES'])
 
-"""
+    # --------------------
+    # Similar compounds
+    # --------------------
+    st.subheader("🔗 Similar Compounds (90%+ similarity)")
+    similar = get_similar_compounds(compound['SMILES'])
+    if similar:
+        for s in similar:
+            st.write("-", s)
+    else:
+        st.write("No similar compounds found.")
+
+    # --------------------
+    # Interaction checker
+    # --------------------
+    st.subheader("🧠 Simulate Chemical Interaction")
+    selected_names = st.multiselect("Choose compounds to mix:", df['Name'])
+    selected_smiles = df[df['Name'].isin(selected_names)]['SMILES'].tolist()
+    if st.button("Check Interaction"):
+        result = simulate_interaction(selected_smiles)
+        st.info(result)
+
+# Run the main async function
+asyncio.run(main())
