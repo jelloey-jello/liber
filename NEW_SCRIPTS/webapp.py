@@ -16,7 +16,7 @@ This Streamlit app performs the following:
 In case you get import warnings:
 pip install streamlit requests beautifulsoup4 pandas matplotlib rdkit pip aiohttp asyncio py3Dmol json
 
-To run: 'streamlit run "NEW SCRIPTS/webapp.py"' in the terminal
+To run: streamlit run "NEW_SCRIPTS/webapp.py" in the terminal
 
 To stop once code runs: CTRL + C
 
