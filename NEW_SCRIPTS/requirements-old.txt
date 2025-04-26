@@ -1,7 +1,0 @@
-streamlit
-requests
-beautifulsoup4
-pandas
-matplotlib
-rdkit-pypi
-py3Dmol
