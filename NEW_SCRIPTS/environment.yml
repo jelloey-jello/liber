@@ -1,0 +1,11 @@
+name: liber
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - streamlit
+  - requests
+  - beautifulsoup4
+  - pandas
+  - matplotlib
+  - rdkit

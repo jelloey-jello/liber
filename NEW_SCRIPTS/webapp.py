@@ -21,8 +21,12 @@ fun note: running "pwd" in the terminal will show you the current working direct
 
 Path: "cd /Users/josiahe.thompson/Library/Mobile\ Documents/com~apple~CloudDocs/G2RETRO"
 
-To push changes from VS Code: git push -u origin main --force
-(if it's still in a BLANK, run 'git rebase --continue')
+To push changes from VS Code:
+
+git add .
+git commit -m "Commit before rebase"
+git push -u origin main (add '--force' as neccessary)
+(sometimes running 'git rebase --continue' helps)
 
 Ensuring code is pushed to GitHub:
 
