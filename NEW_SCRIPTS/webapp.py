@@ -96,8 +96,15 @@ def get_subcategories_and_pages(url, depth=0):
                 page_name = page_link.text
                 page_href = page_link['href']
                 compound_names.append(page_name)
-                
+
     return subcategory_names, compound_names
+
+def get_aromatic_compound_names():
+    url = "https://en.wikipedia.org/wiki/Category:Aromatic_compounds"
+    subcategories, compounds = get_subcategories_and_pages(url)
+    if not subcategories and not compounds:
+        print("No subcategories or compounds found.")
+    return compounds if compounds else []
 
 # ----------------------------------------------------------
 # Step 2: Get SMILES from PubChem and calculate properties (using requests instead of aiohttp)
