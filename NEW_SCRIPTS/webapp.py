@@ -64,20 +64,21 @@ def get_aromatic_compound_names():
     soup = BeautifulSoup(response.text, "html.parser")
     
     # Scraping subcategories
-    def get_subcategories_and_pages(url, depth=0):
-        response = requests.get(url)
-        if response.status_code != 200:
-            print(f"Failed to retrieve {url}")
-            return [], []
+def get_subcategories_and_pages(url, depth=0):
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Failed to retrieve {url}")
+        return [], []
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Scrape subcategories
-        subcategory_names = []
-        subcat_div = soup.find("div", id="mw-subcategories")
-        if subcat_div:
-            links = subcat_div.find_all("a")
-            for link in links:
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Scrape subcategories
+    subcategory_names = []
+    subcat_div = soup.find("div", id="mw-subcategories")
+    if subcat_div:
+        links = subcat_div.find_all("a")
+        for link in links:
+            if 'href' in link.attrs:  # Check if 'href' exists
                 name = link.text
                 href = link['href']
                 subcategory_names.append(name)
@@ -85,21 +86,18 @@ def get_aromatic_compound_names():
                 full_url = "https://en.wikipedia.org" + href
                 subcategory_names += get_subcategories_and_pages(full_url, depth + 1)[0]
 
-        # Scrape page links (molecules/articles)
-        compound_names = []
-        pages_div = soup.find("div", id="mw-pages")
-        if pages_div:
-            page_links = pages_div.find_all("a")
-            for page_link in page_links:
+    # Scrape page links (molecules/articles)
+    compound_names = []
+    pages_div = soup.find("div", id="mw-pages")
+    if pages_div:
+        page_links = pages_div.find_all("a")
+        for page_link in page_links:
+            if 'href' in page_link.attrs:  # Check if 'href' exists
                 page_name = page_link.text
                 page_href = page_link['href']
                 compound_names.append(page_name)
                 
-        return subcategory_names, compound_names
-
-    subcategories, compounds = get_subcategories_and_pages(url)
-    all_names = subcategories + compounds
-    return all_names
+    return subcategory_names, compound_names
 
 # ----------------------------------------------------------
 # Step 2: Get SMILES from PubChem and calculate properties (using requests instead of aiohttp)
