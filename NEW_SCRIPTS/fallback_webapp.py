@@ -1,45 +1,4 @@
-# pushed after fixing environment.yml
-
-"""
-Aromatic Compound Explorer Web App
-
-This Streamlit app performs the following:
-1. Scrapes aromatic compound names from Wikipedia.
-2. Retrieves molecular data from PubChem and calculates additional properties using RDKit.
-3. Displays the data in a searchable table.
-4. Visualizes basic statistics via matplotlib.
-5. Displays 2D and 3D molecular structures using RDKit and py3Dmol.
-6. Performs similarity search for structurally similar compounds.
-7. Simulates chemical interactions via a mock T5Chem/ChemCrow-style checker.
-8. Allows data export to CSV and JSON.
-
-In case you get import warnings:
-pip install streamlit requests beautifulsoup4 pandas matplotlib rdkit pip aiohttp asyncio py3Dmol json
-
-To run: streamlit run "NEW_SCRIPTS/webapp.py" in the terminal
-
-To stop once code runs: CTRL + C
-
-fun fact: running "pwd" in the terminal will show you the current working directory
-
-Path: "cd /Users/josiahe.thompson/Library/Mobile\ Documents/com~apple~CloudDocs/G2RETRO"
-
-To push changes from VS Code:
-
-git add .
-git commit -m "additional commit (updated webapp.py and environment.yml)"
-git push -u origin main (add '--force' as neccessary)
-(sometimes running 'git rebase --continue' helps)
-
-Ensuring code is pushed to GitHub:
-
-git init
-git remote add origin https://github.com/jelloey-jello/https://github.com/jelloey-jello/liber.git
-git branch -M main
-git add .
-git commit -m "Initial commit"
-git push -u origin main
-"""
+#streamlit run "NEW_SCRIPTS/fallback_webapp.py"
 
 # -------------------------------
 # Import necessary libraries
